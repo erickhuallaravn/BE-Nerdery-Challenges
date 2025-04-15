@@ -13,7 +13,7 @@ Example:
 
 factorialChain(5, 3); // Expected output: "153"
 factorialChain(5, 1); // Expected output: "3
-factorialChain(5,5); // Expected output: "00153"
+factorialChain(5, 5); // Expected output: "00153"
 
 1! = 1  
 2! = 2  
@@ -31,6 +31,19 @@ Requirements:
 
 */
 
-const factorialChain = (number, lastDigits) => {};
-
+const factorialChain = (number, lastDigits) => {
+    const factorials = [];
+    factorials[0] = 1;
+    let prevNumber = factorials[0];
+    let totalSum = 0;
+    for (let index = 1; index < number; index++) {
+        prevNumber = factorials[index-1];
+        factorials[index] = (index+1) * prevNumber;
+    }
+    factorials.forEach(n => {
+        totalSum += n;
+    });
+    let result = String(totalSum);
+    return result.substring(result.length-lastDigits, result.length).padStart(lastDigits, '0');
+};
 module.exports = factorialChain;

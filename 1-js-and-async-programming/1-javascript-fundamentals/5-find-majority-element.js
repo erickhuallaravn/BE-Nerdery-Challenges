@@ -16,9 +16,27 @@ findMajorityElement([1, 1, 2, 2, 2]); // Expected output: 2
 findMajorityElement([1, 2, 2, 3, 3, 3]); // Expected output: null
 findMajorityElement([1, 2, 3, 4, 5]); // Expected output: null
 
-
 */
 
-const findMajorityElement = (arr) => {};
+const findMajorityElement = (arr) => {
+    arr = arr.sort();
+    let currentCount = 1;
+    let majorNumber = null;
+    let majorCount = 0;
+    for(let i = 1; i < arr.length; i++){
+        if (arr[i-1] == arr[i])
+            currentCount++;
+        if (currentCount > majorCount && currentCount > arr.length/2) {
+            majorCount = currentCount;
+            majorNumber = arr[i-1];
+        }
+        if (arr[i-1] != arr[i])
+            currentCount = 1;
+    }
+    if (arr.length == 1) {
+        majorNumber = arr[0];
+    }
+    return majorNumber;
+};
 
 module.exports = findMajorityElement;
