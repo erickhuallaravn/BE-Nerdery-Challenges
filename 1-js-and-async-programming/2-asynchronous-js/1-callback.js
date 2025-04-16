@@ -20,8 +20,83 @@
 
 const makeRequest = require("./utils/make-requests");
 
+/*
+// ASYNC/AWAIT
+const makeRequestWithRetries = async (attempts) => {
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      const result = await new Promise((resolve, reject) => {
+        makeRequest(attempt, (error, result) => {
+          if (error) {
+            console.log(error.message);
+            reject(error);
+          }
+          else {
+            console.log(result);
+            resolve(result);
+          }
+        });
+      });
+      return result;
+    } catch (error) {
+      if (attempt == attempts)
+        throw error;
+    }
+  }
+}
+
+makeRequestWithRetries(10)
+  .then(result => console.log("\nFinal result:", result))
+  .catch(error => console.error("\nAll attempts failed:", error.message));
+*/
+
+/*
+// PROMISES
 const makeRequestWithRetries = (attempts) => {
-  // TODO: Implement the function to make a request and retry if it fails
-};
+  function tryRequest(attempt) {
+    return new Promise((resolve, reject) => {
+      makeRequest(attempt, (error, result) => {
+        if (error) {
+          if (attempt === attempts) {
+            console.log(error.message);
+            reject(error);
+          } else {
+            console.log(error.message);
+            resolve(tryRequest(attempt+1));
+          }
+        }
+        else {
+          console.log(result);
+          resolve(result);
+        }
+      })
+    });
+  }
+  return tryRequest(1);
+}
+
+makeRequestWithRetries(10)
+  .then(result => console.log("\nFinal result:", result))
+  .catch(error => console.error("\nAll attempts failed:", error.message));
+*/
+
+// CALLBACKS
+const makeRequestWithRetries = (attempts) => {
+  function tryRequest(attempt) {
+    makeRequest(attempt, (error, result) => {
+      if (error) {
+        if (attempt === attempts) {
+          console.log(error.message);
+        } else {
+          console.log(error.message);
+          tryRequest(attempt+1)
+        }
+      }
+      else
+        console.log(result);
+    })
+  }
+  return tryRequest(1);
+}
 
 makeRequestWithRetries(10);
