@@ -89,7 +89,7 @@ const makeRequestWithRetries = (attempts) => {
           console.log(error.message);
         } else {
           console.log(error.message);
-          tryRequest(attempt+1)
+          tryRequest(attempt + 1)
         }
       }
       else
