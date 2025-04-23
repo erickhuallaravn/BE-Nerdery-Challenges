@@ -32,18 +32,14 @@ Requirements:
 */
 
 const factorialChain = (number, lastDigits) => {
-    const factorials = [];
-    factorials[0] = 1;
-    let prevNumber = factorials[0];
-    let totalSum = 0;
-    for (let index = 1; index < number; index++) {
-        prevNumber = factorials[index-1];
-        factorials[index] = (index+1) * prevNumber;
+    let lastProduct = 1;
+    let totalSum = lastProduct;
+    for (let factor = 2; factor <= number; factor++) {
+        lastProduct *= factor;
+        totalSum += lastProduct;
     }
-    factorials.forEach(n => {
-        totalSum += n;
-    });
-    let result = String(totalSum);
-    return result.substring(result.length-lastDigits, result.length).padStart(lastDigits, '0');
+    const digits = String(totalSum).length;
+    let result = String(totalSum).substring(digits-lastDigits, digits).padStart(lastDigits, '0');
+    return result;
 };
 module.exports = factorialChain;
