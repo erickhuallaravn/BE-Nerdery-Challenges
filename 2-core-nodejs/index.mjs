@@ -97,10 +97,10 @@ const addItem = async () => {
         const store = String(await rl.question('Please enter the new item store: '));
         let items = await getItemsList();
         const lastId = items.length > 0
-            ? items.reduce((max, item) => item.id > max ? item.id : max, 0)
+            ? items.sort((curr, next) => next.id - curr.id)[0].id
             : 0;
         const newItem = new Item(lastId + 1, name, price, store);
-        console.log(newItem.jsonify());
+        Item.printTable([newItem]);
         const confirm = String(await rl.question('\nPlease press [enter] to confirm or any [other key] to cancel: '));
         if (confirm === '') {
             items.push(newItem);
@@ -118,7 +118,7 @@ const viewItems = async () => {
     try {
         console.log(`\nVIEWING ALL OF THE ITEMS IN WISHLIST`);
         const items = await getItemsList();
-        console.log(items);
+        Item.printTable(items);
     } catch (error) {
         throw error;
     }
@@ -127,15 +127,17 @@ const viewItems = async () => {
 const updateItem = async () => {
     try {
         console.log(`\nUPDATING AN EXISTING ITEM`);
+        let items = await getItemsList();
+        Item.printTable(items);
         const itemId = Number(await rl.question('Please enter the item ID to be updated: '));
         if (isNaN(itemId) || itemId <= 0) {
             throw new Error('The item ID provided is not valid');
         }
-        let items = await getItemsList();
         const itemIndex = items.findIndex(i => i.id == itemId);
 
         if (itemIndex !== -1) {
             console.log('Item found!');
+            Item.printTable([items[itemIndex]]);
         } else {
             throw new Error('Item not found');
         }
@@ -147,7 +149,10 @@ const updateItem = async () => {
         const store = String(await rl.question('Please type the new item store or press enter to skip: '));
         items[itemIndex].name = name !== '' ? name : items[itemIndex].name
         items[itemIndex].price = price !== '' ? price : items[itemIndex].price;
-        items[itemIndex].store = store !== '' ? store : items[itemIndex].store
+        items[itemIndex].store = store !== '' ? store : items[itemIndex].store;
+        console.clear();
+        Item.printTable([items[itemIndex]]);
+
         await fs.writeFile(storageFilename, JSON.stringify(items));
         console.log('RESULT: Item updated succesfully.');
     } catch (error) {
@@ -158,14 +163,16 @@ const updateItem = async () => {
 const deleteItem = async () => {
     try {
         console.log(`\nDELETING AN EXISTING ITEM`);
+        let items = await getItemsList();
+        Item.printTable(items);
         const itemId = Number(await rl.question('Please enter the item ID to be deleted: '));
         if (isNaN(itemId) || itemId <= 0) {
             throw new Error("The item ID provided is not valid");
         }
-        let items = await getItemsList();
         const itemIndex = items.findIndex(i => i.id == itemId);
         if (itemIndex !== -1) {
             console.log('Item found!');
+            Item.printTable([items[itemIndex]]);
         } else {
             throw new Error('Item not found');
         }
@@ -210,7 +217,8 @@ const getSummary = async () => {
         for (const item of items) totalCost += item.price;
         const averagePrice = totalCost / itemsCount;
 
-        console.log(`\nThe most expensive item is:\n${mostExpensiveItem.jsonify()}`);
+        console.log('\nThe most expensive item is:');
+        Item.printTable([mostExpensiveItem])
         console.log(`Average price: ${averagePrice.toFixed(2)}`);
         console.log(`Total cost: ${totalCost.toFixed(2)}`);
         console.log(`Number of items: ${itemsCount}`);

@@ -19,4 +19,13 @@ export class Item {
     parseToCSV() {
         return `${this.id},${this.name},${this.price},${this.store}`;
     }
+    static printTable(items) {
+        items.sort((curr, next) => curr.id - next.id);
+        console.table(items.map(item => ({
+            ID: item.id,
+            Nombre: item.name,
+            Precio: Number(item.price.toFixed(2)),
+            Tienda: item.store
+        })));
+    }
 }
