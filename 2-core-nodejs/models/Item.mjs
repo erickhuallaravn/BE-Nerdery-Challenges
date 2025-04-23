@@ -13,6 +13,9 @@ export class Item {
             "store": this.store
         });
     }
+    static getColumns() {
+        return 'id,name,price,store';
+    }
     parseToCSV() {
         return `${this.id},${this.name},${this.price},${this.store}`;
     }

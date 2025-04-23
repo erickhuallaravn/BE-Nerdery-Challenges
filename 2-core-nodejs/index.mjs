@@ -70,10 +70,14 @@ const selectOption = async () => {
 
 const getItemsList = async () => {
     try {
-        const data = await fs.readFile(storageFilename, 'utf-8');
-        if (!data.trim()) return [];
+        await fs.mkdir(path.dirname(storageFilename), {recursive: true});
 
-        const rawItems = JSON.parse(data);
+        const fileHandle = await fs.open(storageFilename, 'a+');
+        const fileContent = await fileHandle.readFile('utf-8');
+        if (!fileContent.trim()) return [];
+
+        const rawItems = JSON.parse(fileContent);
+        await fileHandle.close();
         const items = rawItems.map(i => new Item(i.id, i.name, i.price, i.store));
         return items;
     } catch (error) {
@@ -110,7 +114,7 @@ const addItem = async () => {
 const viewItems = async () => {
     try {
         console.log(`\nVIEWING ALL OF THE ITEMS IN WISHLIST`);
-        const items = await fs.readFile(storageFilename, 'utf-8');
+        const items = await getItemsList();
         console.log(items);
     } catch (error) {
         throw error;
@@ -175,7 +179,7 @@ const exportToCSV = async () => {
             console.log('No items to export.');
             return;
         }
-        let csvContent = 'name,price,store\n';
+        let csvContent = Item.getColumns() + '\n';
         csvContent += items.map(item => item.parseToCSV()).join('\n');
         await fs.writeFile(exportFilename, csvContent, 'utf-8');
         console.log('Wishlist exported to CSV successfully. The file is at:', exportFilename);
