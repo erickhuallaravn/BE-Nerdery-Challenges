@@ -38,44 +38,9 @@ const getUsersWithMoreDislikedMoviesThanLikedMovies = () => {
     });
 };
 
-//FOR 3RD EXERCISE
-/**/
-const getUsersAsync = async () => {
-  return await getUsers();
-}
-const getLikedMoviesAsync = async () => {
-  return await getLikedMovies();
-}
-const getDislikedMoviesAsync = async () => {
-  return await getDislikedMovies();
-}
-const getUsersWithMoreDislikedMoviesThanLikedMoviesAsync = async () => {
-  try {
-    const users = await getUsersAsync();
-    const likedMovies = await getLikedMoviesAsync();
-    const dislikedMovies = await getDislikedMoviesAsync();
-
-    const filteredUsers = await Promise.all(
-      users.filter(async user => {
-        let likedMoviesCount = likedMovies.find(m => m.userId == user.id)?.movies.length || 0;
-        let dislikedMoviesCount = dislikedMovies.find(m => m.userId == user.id)?.movies.length || 0;
-        return dislikedMoviesCount > likedMoviesCount;
-      }));
-    return filteredUsers;
-  } catch (error) {
-    throw error;
-  }
-};
-module.exports = {
-  getUsersWithMoreDislikedMoviesThanLikedMoviesAsync
-};
-/**/
-
-if (require.main === module) {
-  getUsersWithMoreDislikedMoviesThanLikedMovies().then((users) => {
-    console.log("Users with more disliked movies than liked movies:");
-    users.forEach((user) => {
-      console.log(user.name, user.age);
-    });
-  }).catch(error => console.log(`${error}`));
-}
+getUsersWithMoreDislikedMoviesThanLikedMovies().then((users) => {
+  console.log("Users with more disliked movies than liked movies:");
+  users.forEach((user) => {
+    console.log(user.name, user.age);
+  });
+}).catch(error => console.log(`${error}`));
