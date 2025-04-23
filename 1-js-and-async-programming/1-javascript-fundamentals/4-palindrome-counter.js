@@ -36,7 +36,7 @@ const palindromeCounter = (text, minLength) => {
     let reversedWord = '';
     text.split(' ').forEach(word => {
         reversedWord = word.split('').reverse().join('').toLowerCase();
-        if (word.length >= minLength && word.toLowerCase() == reversedWord)
+        if (word.length >= minLength && word.toLowerCase() === reversedWord)
             pals++;
     });
     return pals;

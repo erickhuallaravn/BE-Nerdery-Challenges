@@ -24,7 +24,7 @@ const findMajorityElement = (arr) => {
     let majorNumber = null;
     let majorCount = 0;
     for(let i = 1; i < arr.length; i++){
-        if (arr[i-1] == arr[i])
+        if (arr[i-1] === arr[i])
             currentCount++;
         if (currentCount > majorCount && currentCount > arr.length/2) {
             majorCount = currentCount;
@@ -33,7 +33,7 @@ const findMajorityElement = (arr) => {
         if (arr[i-1] != arr[i])
             currentCount = 1;
     }
-    if (arr.length == 1) {
+    if (arr.length === 1) {
         majorNumber = arr[0];
     }
     return majorNumber;
