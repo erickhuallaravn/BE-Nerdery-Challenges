@@ -27,8 +27,7 @@ const { getUsers, getLikedMovies, getDislikedMovies } = require("./utils/mocked-
  * @returns {Promise<User[]>} A promise that resolves to an array of users who dislike more movies than they like.
  */
 const getUsersWithMoreDislikedMoviesThanLikedMovies = () => {
-  const info = [getUsers(), getLikedMovies(), getDislikedMovies()];
-  return Promise.all(info)
+  return Promise.all(getUsers(), getLikedMovies(), getDislikedMovies())
     .then(([users, likedMovies, dislikedMovies]) => {
       const filteredUsers = users.filter(user => {
         let likedMoviesCount = likedMovies.find(m => m.userId == user.id)?.movies.length || 0;
