@@ -90,7 +90,10 @@ const addItem = async () => {
     try {
         console.log(`\nADDING A NEW ITEM`);
         const name = String(await rl.question('Please enter the new item name: '));
-        const price = Number(await rl.question('Please enter the new item price: '));
+        let price = Number(await rl.question('Please enter the new item price: '));
+        while (isNaN(price) || price < 0) {
+            price = Number(await rl.question('\tPlease enter a valid item price: '));
+        }
         const store = String(await rl.question('Please enter the new item store: '));
         let items = await getItemsList();
         const lastId = items.length > 0
@@ -98,8 +101,8 @@ const addItem = async () => {
             : 0;
         const newItem = new Item(lastId + 1, name, price, store);
         console.log(newItem.jsonify());
-        const confirm = await rl.question('\nPlease press [enter] to confirm or any [other key] to cancel: ');
-        if (String(confirm) === '') {
+        const confirm = String(await rl.question('\nPlease press [enter] to confirm or any [other key] to cancel: '));
+        if (confirm === '') {
             items.push(newItem);
             await fs.writeFile(storageFilename, JSON.stringify(items));
             console.log('RESULT: Item added succesfully.');
@@ -136,9 +139,12 @@ const updateItem = async () => {
         } else {
             throw new Error('Item not found');
         }
-        const name = await rl.question('Please type the new item name or press enter to skip: ');
-        const price = await rl.question('Please type the new item price or press enter to skip: ');
-        const store = await rl.question('Please type the new item store or press enter to skip: ');
+        const name = String(await rl.question('Please type the new item name or press enter to skip: '));
+        let price = Number(await rl.question('Please type the new item price or press enter to skip: '));
+        while (isNaN(price) || price < 0) {
+            price = Number(await rl.question('\tPlease enter a valid item price: '));
+        }
+        const store = String(await rl.question('Please type the new item store or press enter to skip: '));
         items[itemIndex].name = name !== '' ? name : items[itemIndex].name
         items[itemIndex].price = price !== '' ? price : items[itemIndex].price;
         items[itemIndex].store = store !== '' ? store : items[itemIndex].store
