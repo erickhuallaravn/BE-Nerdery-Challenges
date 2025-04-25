@@ -12,11 +12,19 @@ Requirements:
 - The function should return the rotated array.
 
 Example:
+rotateArray([1, 2, 3, 4, 5], 1); // Expected output: [2, 3, 4, 5, 1]
 rotateArray([1, 2, 3, 4, 5], 2); // Expected output: [3, 4, 5, 1, 2]
 rotateArray([1, 2, 3, 4, 5], 7); // Expected output: [3, 4, 5, 1, 2]
 
 */
 
-const rotateArray = (arr, n) => {};
+const rotateArray = (arr, n) => {
+    let firstElement = null;
+    for (let index = 0; index < n; index++) {
+        firstElement = arr.shift()
+        arr.push(firstElement);
+    }
+    return arr;
+}
 
 module.exports = rotateArray;

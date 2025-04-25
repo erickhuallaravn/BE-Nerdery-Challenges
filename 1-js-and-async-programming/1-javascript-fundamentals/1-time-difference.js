@@ -16,6 +16,13 @@ timeDifference(7200, 3400); // Expected output: "01:03:20"
 
 */
 
-const timeDifference = (a, b) => {};
+const timeDifference = (a, b) => {
+    let diff = Math.abs(a-b);
+    let hrs = String(Math.floor(diff/(60*60))).padStart(2, '0');
+    let mins = String(Math.floor(diff/60%60)).padStart(2, '0');
+    let secs = String(diff%60).padStart(2, '0');
+    let formattedDiff = `${hrs}:${mins}:${secs}`;
+    return formattedDiff;
+}
 
 module.exports = timeDifference;
