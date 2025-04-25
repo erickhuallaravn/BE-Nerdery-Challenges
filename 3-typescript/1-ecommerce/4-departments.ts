@@ -16,51 +16,45 @@ import * as path from "path";
 const productsPath = path.join(__dirname, "data", "products.json");
 const departmentsPath = path.join(__dirname, "data", "departments.json");
 
-type ProductsPerDepartment = Record<string, number>;
-type DepartmentProductsInformation = {
+type DepartmentProductSummary = {
   departmentId: number;
   department: string;
   productsAvailable: number;
   productsNames: string[];
 };
-async function getDepartmentsWithProductCount(
+async function summarizeProductsByDepartment(
   departments: Department[],
   products: Product[],
-): Promise<DepartmentProductsInformation[]> {
-  const result: DepartmentProductsInformation[] = [];
+): Promise<DepartmentProductSummary[]> {
+  return departments
+    .map(({ id: departmentId, name: department }) => {
+      const relatedProducts = products.filter(
+        (p) => p.departmentId === departmentId,
+      );
 
-  for (const department of departments) {
-    const departmentId = department.id;
-    const departmentName = department.name;
+      if (relatedProducts.length === 0) return null;
 
-    const productsInDepartment = products.filter(
-      (p) => p.departmentId === departmentId,
-    );
-
-    if (productsInDepartment.length > 0) {
-      result.push({
+      return {
         departmentId,
-        department: departmentName,
-        productsAvailable: productsInDepartment.length,
-        productsNames: productsInDepartment.map((p) => p.name),
-      });
-    }
-  }
-
-  return result;
+        department,
+        productsAvailable: relatedProducts.length,
+        productsNames: relatedProducts.map((p) => p.name),
+      };
+    })
+    .filter((d): d is DepartmentProductSummary => d !== null);
 }
 
 const productsPromise: Promise<Product[]> = readJsonFile<Product>(productsPath);
-const brandsPromise: Promise<Department[]> =
+const departmentsPromise: Promise<Department[]> =
   readJsonFile<Department>(departmentsPath);
 
-Promise.all([brandsPromise, productsPromise])
-  .then(([brands, products]) => {
-    return getDepartmentsWithProductCount(brands, products);
-  })
+Promise.all([departmentsPromise, productsPromise])
+  .then(([departments, products]) =>
+    summarizeProductsByDepartment(departments, products),
+  )
   .then((result) => {
     console.log(result);
   })
   .catch((error) => {
-    console.error(error);
+    console.error("Error summarizing departments:", error);
   });

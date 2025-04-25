@@ -11,52 +11,54 @@
  * - The amount of products should be calculated by counting the number of products that have a brandId matching the id of a brand in the same country.
  * - The return should be a type that allow us to define the country name as a key and the amount of products as a value.
  */
-import { Brand, Product } from './1-types';
+import { Brand, Product } from "./1-types";
 import { readJsonFile } from "./utils/read-json.util";
 import * as path from "path";
 
 const productsPath = path.join(__dirname, "data", "products.json");
 const brandsPath = path.join(__dirname, "data", "brands.json");
 
-type ProductsPerCountry = Record<string, number>;
 type CountryProductCount = {
   country: string;
   productsAvailable: number;
 };
-async function getCountriesWithBrandsAndProductCount(
+type ProductsPerCountry = Record<string, number>;
+
+async function countProductsByCountry(
   brands: Brand[],
   products: Product[],
 ): Promise<CountryProductCount[]> {
-  const result: ProductsPerCountry = {};
-  
-  for (const brand of brands) {
-    const headquarter: string = brand.headquarters;
-    if (!headquarter) continue;
-    const country: string = headquarter.split(', ')[1];
+  const productCountByCountry: ProductsPerCountry = {};
 
-    const productCount = products.filter(p => Number(p.brandId) === Number(brand.id)).length;
-    if (productCount > 0) {
-      result[country] = (result[country] || 0) + productCount;
+  for (const brand of brands) {
+    const country = brand.headquarters?.split(", ")[1];
+    if (!country) continue;
+
+    const brandProductsCount = products.filter(
+      (product) => Number(product.brandId) === Number(brand.id),
+    ).length;
+
+    if (brandProductsCount > 0) {
+      productCountByCountry[country] =
+        (productCountByCountry[country] || 0) + brandProductsCount;
     }
   }
-  const countryCounts: CountryProductCount[] = Object.entries(result).map(
+
+  return Object.entries(productCountByCountry).map(
     ([country, productsAvailable]) => ({
       country,
       productsAvailable,
     }),
   );
-  return countryCounts;
 }
 const productsPromise: Promise<Product[]> = readJsonFile<Product>(productsPath);
 const brandsPromise: Promise<Brand[]> = readJsonFile<Brand>(brandsPath);
 
 Promise.all([brandsPromise, productsPromise])
-  .then(([brands, products]) => {
-    return getCountriesWithBrandsAndProductCount(brands, products);
-  })
-  .then(result => {
+  .then(([brands, products]) => countProductsByCountry(brands, products))
+  .then((result) => {
     console.log(result);
   })
-  .catch(error => {
-    console.error(error);
+  .catch((error) => {
+    console.error("Error counting products by country:", error);
   });

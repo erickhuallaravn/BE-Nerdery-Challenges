@@ -1,4 +1,4 @@
-/**
+/*
  * Challenge: Create a deep clone function
  *
  * Create a function that takes an object and returns a deep clone of that object. The function should handle nested objects, arrays, and primitive types.
@@ -9,9 +9,7 @@
  * - The function should handle nested objects and arrays.
  * - It should handle primitive types (strings, numbers, booleans, null, undefined).
  * - The function should not use any external libraries
- */
-
-//? implement the function  here
+*/
 
 type Primitive = string | number | boolean | bigint | symbol | undefined | null;
 type DeepClone<T> = T extends Primitive
@@ -20,6 +18,18 @@ type DeepClone<T> = T extends Primitive
     ? T
     : { [K in keyof T]: DeepClone<T[K]> };
 
+/**
+ * Deeply clones any object, including nested structures like arrays, maps, sets, and more.
+ *
+ * @template T - Type of the input object.
+ * @param originalInstance - The object to deeply clone.
+ * @returns A deep clone of the input object, preserving structure and values.
+ *
+ * @example
+ * const user = { name: "Ana", address: { city: "Lima" } };
+ * const clone = createDeepClone(user);
+ * clone.address.city = "Cusco"; // user.address.city remains "Lima"
+ */
 function createDeepClone<T>(originalInstance: T): DeepClone<T> {
   if (originalInstance === null || typeof originalInstance !== "object") {
     return originalInstance as DeepClone<T>;

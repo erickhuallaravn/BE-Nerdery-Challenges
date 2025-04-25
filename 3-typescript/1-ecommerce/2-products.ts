@@ -19,60 +19,78 @@
  *
  **/
 
-import { Brand, Product, ProductImage } from './1-types';
+import { Brand, Product, ProductImage } from "./1-types";
 import { readJsonFile } from "./utils/read-json.util";
 import * as path from "path";
 
 const productsPath = path.join(__dirname, "data", "products.json");
 const brandsPath = path.join(__dirname, "data", "brands.json");
 
-async function analyzeProductPrices(products: Product[]): Promise<any> {
-  if (products.length === 0) return;
+interface ProductAnalysisResult {
+  totalPrice: number;
+  averagePrice: number;
+  mostExpensiveProduct: Product;
+  cheapestProduct: Product;
+  onSaleCount: number;
+  averageDiscountPercentage: string;
+}
 
-  let totalPrice: number = 0;
-  products.forEach((p) => {
-    totalPrice += p.price;
-  });
-  const averagePrice: number = Number(
-    (totalPrice / products.length).toFixed(2),
+async function analyzeProductPrices(
+  products: Product[],
+): Promise<ProductAnalysisResult> {
+  if (products.length === 0) return {} as ProductAnalysisResult;
+
+  const totalPrice = products.reduce((sum, product) => sum + product.price, 0);
+  const averagePrice = parseFloat((totalPrice / products.length).toFixed(2));
+
+  const { mostExpensiveProduct, cheapestProduct } = products.reduce(
+    (acc, product) => {
+      if (product.price > acc.mostExpensiveProduct.price) {
+        acc.mostExpensiveProduct = product;
+      }
+      if (product.price < acc.cheapestProduct.price) {
+        acc.cheapestProduct = product;
+      }
+      return acc;
+    },
+    { // Initial value is the first product
+      mostExpensiveProduct: products[0],
+      cheapestProduct: products[0],
+    },
   );
-  let mosExpensiveProduct: Product = products[0];
-  let cheapestroduct: Product = products[0];
-  products.forEach((p) => {
-    mosExpensiveProduct =
-      p.price > mosExpensiveProduct.price ? p : mosExpensiveProduct;
-    cheapestroduct = p.price < cheapestroduct.price ? p : cheapestroduct;
-  });
-  const onSaleProducts: Product[] = products.filter((p) => p.onSale === true);
-  const onSaleCount: number = onSaleProducts.length;
-  let averageDiscount: number = 0;
-  onSaleProducts
-    .map((p) => ((p.price - (p.salePrice || 0)) * 100) / p.price)
-    .forEach((p) => (averageDiscount += p));
-  let averageDiscountPercentage: string = `${(averageDiscount / products.length).toFixed(2)}%`;
+
+  const onSaleProducts = products.filter((product) => product.onSale);
+  const onSaleCount = onSaleProducts.length;
+
+  const averageDiscount = onSaleProducts.reduce((sum, product) => {
+    const discountPercentage = product.salePrice
+      ? ((product.price - product.salePrice) * 100) / product.price
+      : 0;
+    return sum + discountPercentage;
+  }, 0);
+  const averageDiscountPercentage = onSaleCount
+    ? `${(averageDiscount / onSaleCount).toFixed(2)}%`
+    : "0%";
+
   return {
     totalPrice,
     averagePrice,
-    mosExpensiveProduct,
-    cheapestroduct,
+    mostExpensiveProduct,
+    cheapestProduct,
     onSaleCount,
     averageDiscountPercentage,
   };
 }
 
 const productsPromise: Promise<Product[]> = readJsonFile<Product>(productsPath);
-/*
 productsPromise
-  .then(result => {
-    return analyzeProductPrices(result);
-  })
-  .then(result => {
+  .then((products) => analyzeProductPrices(products))
+  .then((result) => {
     console.log(result);
   })
-  .catch(error => {
-    console.error(error);
+  .catch((error) => {
+    console.error("Error analizing the product prices:", error);
   });
-*/
 
 /**
  *  Challenge 2: Build a Product Catalog with Brand Metadata
@@ -96,35 +114,38 @@ async function buildProductCatalog(
   products: Product[],
   brands: Brand[],
 ): Promise<EnrichedProduct[]> {
-  const activeBrands = brands.filter((b) => b.isActive);
-  return products
-    .filter((p) => p.isActive && activeBrands.some((b) => b.id === p.brandId))
-    .map((p) => {
-      const brand = activeBrands.find((b) => b.id === p.brandId);
-      if (!brand) return null!;
+  // It's mapped to being able to acceso to the .has method which is more efficient
+  const activeBrandMap = new Map(
+    brands
+      .filter((brand) => brand.isActive)
+      .map(({ id, isActive, ...rest }) => [
+        id,
+        rest as Omit<Brand, "id" | "isActive">,
+      ]),
+  );
 
-      const { id, isActive, ...brandInfo } = brand;
+  const validProducts = products.filter(
+    (product) => product.isActive && activeBrandMap.has(product.brandId),
+  );
 
-      return {
-        ...p,
-        brandInfo,
-      };
-    });
+  const enrichedCatalog: EnrichedProduct[] = validProducts.map((product) => {
+    const { isActive, ...productData } = product;
+    const brandInfo = activeBrandMap.get(product.brandId)!;
+
+    return {
+      ...productData,
+      brandInfo,
+    };
+  });
+
+  return enrichedCatalog;
 }
 
 const brandsPromise: Promise<Brand[]> = readJsonFile<Brand>(brandsPath);
-/*
 Promise.all([productsPromise, brandsPromise])
-  .then(([products, brands]) => {
-    return buildProductCatalog(products, brands);
-  })
-  .then((result) => {
-    console.log(result);
-  })
-  .catch((error) => {
-    console.error(error);
-  });
-*/
+  .then(([products, brands]) => buildProductCatalog(products, brands))
+  .then((result) => console.log(result))
+  .catch((error) => console.error("Error building product catalog:", error));
 
 /**
  * Challenge 3: One image per product
@@ -142,23 +163,25 @@ Promise.all([productsPromise, brandsPromise])
 
 /*IN CASE WE WANT THE SINGLE IMAGE ITEM INSTEAD OF AN ARRAY*/
 // type SingleImageProduct = Omit<Product, "images"> & { images: ProductImage };
-async function filterProductsWithOneImage(
-  products: Product[]
-): Promise<Readonly<Product[]>> {
+
+async function getProductsWithSingleImage(
+  products: Product[],
+): Promise<Product[]> {
   return products
-    .filter((product) => product.images && product.images.length > 0)
+    .filter(
+      (product) => Array.isArray(product.images) && product.images.length > 0,
+    )
     .map((product) => ({
       ...product,
-      images: [product.images[0]],
+      images: [product.images[0]], // Keep only the first image
     }));
 }
+
 productsPromise
-  .then((products) => {
-    return filterProductsWithOneImage(products);
-  })
-  .then((filteredProducts) => {
-    console.log(filteredProducts);
+  .then(getProductsWithSingleImage)
+  .then((singleImageProducts) => {
+    console.log(singleImageProducts);
   })
   .catch((error) => {
-    console.error(error);
+    console.error("Error filtering products with one image:", error);
   });
