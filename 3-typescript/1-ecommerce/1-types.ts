@@ -17,16 +17,119 @@
  */
 
 // PRODUCTS JSON
-
-//! Add necessary type definitions for the products json file
+type Size = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14;
+type ExtraSpecs =
+  | "ankleSupport"
+  | "shaftHeight"
+  | "heelDrop"
+  | "heelHeight"
+  | "lining"
+  | "flexibility"
+  | "waterproofing"
+  | "archSupport";
+type ExtraProductSpecification = Partial<Record<ExtraSpecs, string>>;
+export interface ProductImage {
+  id: number;
+  url: string;
+  alt: string;
+  isMain: boolean;
+};
+interface BaseSpecifications {
+  material: string;
+  weight: string;
+  cushioning: string;
+  closure: string;
+};
+type ProductSpecifications = BaseSpecifications & ExtraProductSpecification;
+interface BaseProduct {
+  id: number;
+  name: string;
+  departmentId: number;
+  categoryId: number;
+  brandId: number;
+  linkId: string;
+  refId: string;
+  isVisible: boolean;
+  description: string;
+  descriptionShort: string;
+  releaseDate: string;
+  keywords: string;
+  title: string;
+  isActive: boolean;
+  taxCode: string;
+  metaTagDescription: string;
+  supplierId: number;
+  showWithoutStock: boolean;
+  score: number;
+  price: number;
+  salePrice: number | null;
+  onSale: boolean;
+  colors: string[];
+  sizes: Size[];
+  tags: string[];
+  images: ProductImage[];
+  specifications: ProductSpecifications;
+};
+interface ProductWithAdWords extends BaseProduct {
+  adWordsRemarketingCode: string | null;
+};
+interface ProductWithLomadee extends BaseProduct {
+  lomadeeCampaignCode: string | null;
+};
+export type Product =
+  | ProductWithAdWords
+  | ProductWithLomadee
+  | (ProductWithAdWords & ProductWithLomadee);
 
 // CATEGORIES JSON
-
-//! Add necessary type definitions for the brands json file
+interface CategoryFilter {
+  name: string;
+  values: string[];
+};
+export interface Category {
+  id: number;
+  name: string;
+  departmentId: number;
+  description: string;
+  keywords: string;
+  isActive: boolean;
+  iconUrl: string;
+  bannerUrl: string;
+  displayOrder: number;
+  metaDescription: string;
+  filters: CategoryFilter[];
+};
 
 // BRANDS JSON
-
-//! Add necessary type definitions for the brands json file
+enum SocialMediaPlatform {
+    instagram = "instagram",
+    twitter = "twitter",
+    facebook = "facebook"
+};
+type SocialMedia = Record<SocialMediaPlatform, string>;
+export interface Brand {
+  id: number | string;
+  name: string;
+  logo: string;
+  description: string;
+  foundedYear: number;
+  website: string;
+  isActive: boolean;
+  headquarters: string;
+  signature: string;
+  socialMedia: SocialMedia;
+};
 
 // DEPARTMENTS JSON
-//! Add necessary type definitions for the departments json file
+export interface Department {
+  id: number;
+  name: string;
+  description: string;
+  isActive: boolean;
+  displayOrder: number;
+  iconUrl: string;
+  bannerUrl: string;
+  metaDescription: string;
+  featuredCategories: number[];
+  slug: string;
+};
