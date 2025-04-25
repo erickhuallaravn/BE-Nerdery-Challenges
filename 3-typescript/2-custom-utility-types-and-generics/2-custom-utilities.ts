@@ -20,9 +20,33 @@
  * }
  */
 
-// Add here your solution
+/* IMPLEMENTACION */
+type OmitByType<T, U> = {
+  [K in keyof T as T[K] extends U ? never : K]: T[K];
+};
 
-// Add here your example
+/* EJEMPLO */
+type Original = {
+  name: string;
+  count: number;
+  isReadonly: boolean;
+  isEnable: boolean;
+};
+const omitByExample: Original = {
+  name: "Dashboard",
+  count: 42,
+  isReadonly: true,
+  isEnable: false,
+};
+type WithoutBooleans = OmitByType<Original, boolean>;
+const omitByExampleFiltered: WithoutBooleans = {
+  name: omitByExample.name,
+  count: omitByExample.count,
+  //isReadOnly: false //Error: does not exist in type 'OmitByType<Original, boolean>'
+  //isEnable: true //Error: does not exist in type 'OmitByType<Original, boolean>'
+};
+console.log("Original:", omitByExample);
+console.log("Filtered (without booleans):", omitByExampleFiltered);
 
 /**
  * Exercise #2: Implement the utility type `If<C, T, F>`, which evaluates a condition `C`
@@ -39,9 +63,18 @@
  * type B = If<false, 'a', 'b'>; // expected to be 'b'
  */
 
-// Add here your solution
+/* IMPLEMENTACION */
+type If<C extends boolean, T, F> = C extends true ? T : F;
 
-// Add here your example
+/* EJEMPLO */
+type A = If<true, "a", "b">;
+type B = If<false, "a", "b">;
+const ifExampleA: A = "a";
+const ifExampleB: B = "b";
+// const exampleAWrong: A = 'b'; // Error: Type '"b"' is not assignable to type '"a"'
+// const exampleBWrong: B = 'a'; // Error: Type '"a"' is not assignable to type '"b"'
+console.log(ifExampleA);
+console.log(ifExampleB);
 
 /**
  * Exercise #3: Recreate the built-in `Readonly<T>` utility type without using it.
@@ -65,9 +98,23 @@
  * todo.description = "barFoo"; // Error: cannot reassign a readonly property
  */
 
-// Add here your solution
+/* IMPLEMENTACION */
+type MyReadonly<T> = {
+  readonly [K in keyof T]: T[K];
+};
 
-// Add here your example
+/* EJEMPLO */
+interface Todo {
+  title: string;
+  description: string;
+}
+const readonlyExample: MyReadonly<Todo> = {
+  title: "Hey",
+  description: "foobar",
+};
+// readonlyExample.title = "Hello"; // Error: Cannot assign to 'title' because it is a read-only property
+// readonlyExample.description = "barFoo"; // Error: Cannot assign to 'description' because it is a read-only property
+console.log(readonlyExample);
 
 /**
  * Exercise #4: Recreate the built-in `ReturnType<T>` utility type without using it.
@@ -87,9 +134,21 @@
  * type a = MyReturnType<typeof fn>; // expected to be "1 | 2"
  */
 
-// Add here your solution
+/* IMPLEMENTACION */
+type MyReturnType<T> = T extends (...args: any[]) => infer R ? R : never;
 
-// Add here your example
+/* EJEMPLO */
+const fn = (v: boolean): 1 | 2 => {
+  if (v) {
+    return 1;
+  } else {
+    return 2;
+  }
+};
+type ReturnTypeOfFn = MyReturnType<typeof fn>;
+const returnTypeExample: ReturnTypeOfFn = 1;
+// const wrongResult: ReturnTypeOfFn = "string"; // Error: Type 'string' is not assignable to type '1 | 2'
+console.log(returnTypeExample);
 
 /**
  * Exercise #5: Extract the type inside a wrapped type like `Promise`.
@@ -105,9 +164,15 @@
  * type Result = MyAwaited<ExampleType>; // expected to be "string"
  */
 
-// Add here your solution
+/* IMPLEMENTACION */
+type MyAwaited<T> = T extends Promise<infer U> ? U : T;
 
-// Add here your example
+/* EJEMPLO */
+type ExampleType = Promise<string>;
+type Result = MyAwaited<ExampleType>;
+const myAwaitedExample: Result = "Hello, world!";
+// const wrongMyAwaitedExample: Result = 123; // Error: Type 'number' is not assignable to type 'string'
+console.log(myAwaitedExample);
 
 /**
  * Exercise 6: Create a utility type `RequiredByKeys<T, K>` that makes specific keys of `T` required.
@@ -130,6 +195,20 @@
  * expected to be: { name: string; age?: number; address?: string }
  */
 
-// Add here your solution
+/* IMPLEMENTACION */
+type RequiredByKeys<T, K extends keyof T> = Omit<T, K> & {
+  [P in K]-?: T[P];
+};
 
-// Add here your example
+/* EJEMPLO */
+interface User {
+  name?: string;
+  age?: number;
+  address?: string;
+}
+type UserRequiredName = RequiredByKeys<User, "name">; // expected to be { name: string; age?: number; address?: string }
+
+const requiredByKeysExample: UserRequiredName = { name: "John" }; // OK
+// const wrongRequiredByKeysExample: UserRequiredName = { age: 25 }; // Error: Property 'name' is missing in type '{ age: number; }' but required in type '{ name: string; }'
+
+console.log(requiredByKeysExample);
