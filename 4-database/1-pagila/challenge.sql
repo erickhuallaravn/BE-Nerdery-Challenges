@@ -7,9 +7,16 @@
     - film_count should show the total number of films in that category
     - Results should be grouped by category name
  */
-
-
--- your query here
+SELECT
+    c.name as category,
+    COUNT(*) as film_count
+FROM public.film_category fc
+    INNER JOIN public.category c USING (category_id)
+GROUP BY
+    c.category_id,
+    c.name
+ORDER BY
+    category;
 
 
  /*
@@ -20,23 +27,45 @@
     - Results should be ordered by total_spent in descending order
     - The query should limit results to only the top 5 highest-spending customers
  */
-
- -- your query here
-
-
+SELECT
+    c.first_name,
+    c.last_name,
+    SUM(p.amount) as total_spent
+FROM
+    public.customer c
+    INNER JOIN public.payment p ON c.customer_id = p.customer_id
+GROUP BY
+    c.customer_id,
+    c.first_name,
+    c.last_name
+ORDER BY
+    total_spent DESC,
+    first_name,
+    last_name
+LIMIT 5;
 
 
 /*
     Challenge 3.
-    Write a SQL query that lists all film titles that have not been rented in the past 10 years in the Pagila database.
+    Write a SQL query that lists all film titles that have been rented in the past 10 years in the Pagila database.
     - The query should return one column: title
-    - title should display the name of each film that hasn't been rented
+    - title should display the name of each film that has been rented
     - The time period for "recent" should be within the last 10 years from the current date
-    - Results should only include films that have no rental records in this time period
+    - Results should only include films that have rental records in this time period
 */
-
-
--- your query here
+SELECT
+    f.title
+FROM
+    public.film f
+    INNER JOIN public.inventory i ON f.film_id = i.film_id
+    INNER JOIN public.rental r ON i.inventory_id = r.inventory_id
+WHERE
+    r.rental_date BETWEEN (CURRENT_DATE - INTERVAL '10 YEAR') AND CURRENT_DATE
+GROUP BY
+    f.film_id,
+    f.title
+ORDER BY
+    title;
 
 
 /*
@@ -46,11 +75,29 @@
     - title should display the name of each film that has never been rented
     - inventory_id should show the inventory ID of the specific copy
 */
-
-
--- your query here
-
-
+WITH films_with_zero_rents AS (
+    SELECT
+        f.title,
+        i.inventory_id,
+        COUNT(r.rental_id) as count
+    FROM
+        public.film f
+        LEFT JOIN public.inventory i ON f.film_id = i.film_id
+        LEFT JOIN public.rental r ON r.inventory_id = i.inventory_id
+    GROUP BY
+        f.film_id,
+        f.title,
+        i.inventory_id
+    HAVING
+        COUNT(r.rental_id) = 0
+)
+SELECT
+    title,
+    inventory_id
+FROM
+    films_with_zero_rents
+ORDER BY
+    title;
 
 
 /*
@@ -60,10 +107,28 @@
     - title should display the name of each film
     - rental_count should show the total number of times the film was rented
 */
+WITH films_rental AS (
+    SELECT
+        f.title,
+        COUNT(r.rental_id) as rental_count
+    FROM
+        public.film f
+        INNER JOIN public.inventory i ON f.film_id = i.film_id
+        INNER JOIN public.rental r ON i.inventory_id = r.inventory_id
+    GROUP BY
+        f.film_id,
+        f.title
+)
+SELECT
+    title,
+    rental_count
+FROM
+    films_rental
+WHERE
+    rental_count > (SELECT AVG(rental_count) FROM films_rental)
+ORDER BY
+    title;
 
-
-
--- your query here
 
 /*
     Challenge 6.
@@ -74,8 +139,22 @@
     - The difference in days between the first and last rentals should be shown as rental_span_days
     - Results should be grouped by customer and ordered by rental_span_days in descending order
 */
+SELECT
+    CONCAT(c.first_name, ' ', c.last_name) as customer,
+    MIN(r.rental_date) as first_rental,
+    MAX(r.rental_date) as last_rental,
+    DATE_PART('DAY', MAX(r.rental_date) - MIN(r.rental_date)) as rental_span_days
+FROM
+    public.customer c
+    INNER JOIN public.rental r ON c.customer_id = r.customer_id
+    INNER JOIN public.inventory i ON r.inventory_id = i.inventory_id
+GROUP BY
+    c.customer_id,
+    c.first_name,
+    c.last_name
+ORDER BY
+    rental_span_days DESC;
 
--- your query here
 
 /*
     Challenge 7.
@@ -83,9 +162,24 @@
     - The result should include the customer's first_name and last_name
     - Only include customers who are missing at least one genre in their rental history
 */
+SELECT
+    CONCAT(c.first_name, ' ', c.last_name) as customer,
+    COUNT(DISTINCT fc.category_id) as total_categories_rented
+FROM
+    public.customer c
+    INNER JOIN public.rental r ON c.customer_id = r.customer_id
+    INNER JOIN public.inventory i ON r.inventory_id = i.inventory_id
+    INNER JOIN public.film f ON i.film_id = f.film_id
+    INNER JOIN public.film_category fc ON f.film_id = fc.film_id
+GROUP BY
+    c.customer_id,
+    c.first_name,
+    c.last_name
+HAVING
+    COUNT(DISTINCT fc.category_id) < (
+        SELECT COUNT(*) FROM public.category
+    );
 
-
--- your query here
 
 /*
     Bonus Challenge 8 (opt)
@@ -94,9 +188,38 @@
     - Only the top 3 films per category should be returned
     - Results should be ordered by category and ranking within the category
 */
-
-
--- your query here
-
-
-
+WITH category_rents_by_film AS (
+    SELECT
+        c.name as category_name,
+        f.title as film_title,
+        COUNT(r.rental_id) as rental_count,
+        SUM(p.amount) as total_revenue,
+        ROW_NUMBER() OVER (
+            PARTITION BY c.name
+            ORDER BY COUNT(r.rental_id) DESC, SUM(p.amount) DESC
+        ) AS rank
+    FROM
+        public.film f
+        INNER JOIN public.inventory i ON f.film_id = i.film_id
+        INNER JOIN public.rental r ON i.inventory_id = r.inventory_id
+        INNER JOIN public.film_category fc ON f.film_id = fc.film_id
+        INNER JOIN public.category c ON fc.category_id = c.category_id
+        INNER JOIN public.payment p ON r.rental_id = p.rental_id
+    GROUP BY
+        c.category_id,
+        c.name,
+        f.film_id,
+        f.title
+    ORDER BY
+        category_name,
+        rank
+)
+SELECT
+    category_name,
+    film_title,
+    rental_count,
+    total_revenue
+FROM
+    category_rents_by_film
+WHERE
+    rank < 4;
