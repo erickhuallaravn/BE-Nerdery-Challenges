@@ -14,9 +14,7 @@
 type Primitive = string | number | boolean | bigint | symbol | undefined | null;
 type DeepClone<T> = T extends Primitive
   ? T
-  : T extends Function
-    ? T
-    : { [K in keyof T]: DeepClone<T[K]> };
+  : { [K in keyof T]: DeepClone<T[K]> };
 
 /**
  * Deeply clones any object, including nested structures like arrays, maps, sets, and more.
@@ -41,33 +39,6 @@ function createDeepClone<T>(originalInstance: T): DeepClone<T> {
     ) as DeepClone<T>;
   }
 
-  if (originalInstance instanceof Map) {
-    const result = new Map();
-    originalInstance.forEach((value, key) => {
-      result.set(createDeepClone(key), createDeepClone(value));
-    });
-    return result as DeepClone<T>;
-  }
-
-  if (originalInstance instanceof Set) {
-    const result = new Set();
-    originalInstance.forEach((value) => {
-      result.add(createDeepClone(value));
-    });
-    return result as DeepClone<T>;
-  }
-
-  if (originalInstance instanceof Date) {
-    return new Date(originalInstance.getTime()) as DeepClone<T>;
-  }
-
-  if (originalInstance instanceof RegExp) {
-    return new RegExp(
-        (originalInstance as RegExp).source,
-        (originalInstance as RegExp).flags
-      ) as DeepClone<T>;
-  }
-
   const prototype = Object.getPrototypeOf(originalInstance);
   const result = Object.create(prototype);
 
@@ -84,61 +55,27 @@ class CompleteClass {
   age: number;
   isActive: boolean;
   tags: string[];
-  metadata: { created: Date; updated: Date };
   scores: number[];
-  settings: Map<string, any>;
-  uniqueIds: Set<string>;
-  nested: {
-    level1: {
-      level2: {
-        value: string;
-      };
-    };
-  };
   mixedArray: (string | number | boolean)[];
-  pattern: RegExp;
+  subClass: CompleteClass | null;
 
-  constructor() {
+  constructor(withSubClass: boolean) {
     this.name = "Test";
     this.age = 30;
     this.isActive = true;
     this.tags = ["typescript", "clone", "utility"];
-    this.metadata = {
-      created: new Date("2023-01-01"),
-      updated: new Date("2024-01-01"),
-    };
     this.scores = [100, 95, 90];
-    this.settings = new Map([
-      ["theme", "dark"],
-      ["layout", "grid"],
-    ]);
-    this.uniqueIds = new Set(["id1", "id2", "id3"]);
-    this.nested = {
-      level1: {
-        level2: {
-          value: "deep",
-        },
-      },
-    };
-    this.mixedArray = [1, "two", true];
-    this.pattern = /test/i;
-  }
-
-  greet(): string {
-    return `Hello, ${this.name}`;
-  }
-  addTag(tag: string): void {
-    this.tags.push(tag);
+    this.mixedArray = ["a", 1, true];
+    this.subClass = withSubClass ? new CompleteClass(false) : null;
   }
 }
 
-const original = new CompleteClass();
+const original = new CompleteClass(true);
 const cloned = createDeepClone(original);
 
 console.log(cloned instanceof CompleteClass);
-console.log(cloned.greet());
-console.log(cloned.settings.entries());
-console.log(cloned.metadata);
-console.log(cloned.uniqueIds.entries());
-console.log(cloned.nested);
-console.log(cloned.pattern);
+console.log(cloned.name);
+console.log(cloned.tags);
+console.log(cloned.scores);
+console.log(cloned.mixedArray);
+console.log(cloned.subClass?.mixedArray);
