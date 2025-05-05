@@ -21,8 +21,10 @@
  */
 
 /* IMPLEMENTACION */
-type OmitByType<T, U> = {
-  [K in keyof T as T[K] extends U ? never : K]: T[K];
+type OmitByType<ObjectType, ExcludedType> = {
+  [Key in keyof ObjectType as ObjectType[Key] extends ExcludedType
+    ? never
+    : Key]: ObjectType[Key];
 };
 
 /* EJEMPLO */
@@ -64,7 +66,9 @@ console.log("Filtered (without booleans):", omitByExampleFiltered);
  */
 
 /* IMPLEMENTACION */
-type If<C extends boolean, T, F> = C extends true ? T : F;
+type If<Condition extends boolean, TrueType, FalseType> = Condition extends true
+  ? TrueType
+  : FalseType;
 
 /* EJEMPLO */
 type A = If<true, "a", "b">;
@@ -99,8 +103,8 @@ console.log(ifExampleB);
  */
 
 /* IMPLEMENTACION */
-type MyReadonly<T> = {
-  readonly [K in keyof T]: T[K];
+type MyReadonly<ObjectType> = {
+  readonly [Key in keyof ObjectType]: ObjectType[Key];
 };
 
 /* EJEMPLO */
@@ -135,7 +139,9 @@ console.log(readonlyExample);
  */
 
 /* IMPLEMENTACION */
-type MyReturnType<T> = T extends (...args: any[]) => infer R ? R : never;
+type MyReturnType<FunctionType> = FunctionType extends (...args: any[]) => infer Return
+  ? Return
+  : never;
 
 /* EJEMPLO */
 const fn = (v: boolean): 1 | 2 => {
@@ -165,10 +171,12 @@ console.log(returnTypeExample);
  */
 
 /* IMPLEMENTACION */
-type MyAwaited<T> = T extends Promise<infer U> ? U : T;
+type MyAwaited<PromiseType> = PromiseType extends Promise<infer ResultType>
+    ? MyAwaited<ResultType> // Recursive to manage possible nested promises
+    : PromiseType;
 
 /* EJEMPLO */
-type ExampleType = Promise<string>;
+type ExampleType = Promise<Promise<string>>;
 type Result = MyAwaited<ExampleType>;
 const myAwaitedExample: Result = "Hello, world!";
 // const wrongMyAwaitedExample: Result = 123; // Error: Type 'number' is not assignable to type 'string'
@@ -196,8 +204,8 @@ console.log(myAwaitedExample);
  */
 
 /* IMPLEMENTACION */
-type RequiredByKeys<T, K extends keyof T> = Omit<T, K> & {
-  [P in K]-?: T[P];
+type RequiredByKeys<ObjectType, Keys extends keyof ObjectType> = Omit<ObjectType, Keys> & {
+  [Key in Keys]-?: ObjectType[Key];
 };
 
 /* EJEMPLO */
