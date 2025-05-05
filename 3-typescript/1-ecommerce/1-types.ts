@@ -17,7 +17,7 @@
  */
 
 // PRODUCTS JSON
-type Size = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14;
+type Size = number | string;
 type ExtraSpecs =
   | "ankleSupport"
   | "shaftHeight"
@@ -40,7 +40,11 @@ interface BaseSpecifications {
   cushioning: string;
   closure: string;
 };
+
 type ProductSpecifications = BaseSpecifications & ExtraProductSpecification;
+type RemoveNullProperties<T> = {
+  [K in keyof T as T[K] extends null ? never : K]: T[K];
+};
 interface BaseProduct {
   id: number;
   name: string;
@@ -69,17 +73,10 @@ interface BaseProduct {
   tags: string[];
   images: ProductImage[];
   specifications: ProductSpecifications;
+  adWordsRemarketingCode?: string | null;
+  lomadeeCampaignCode?: string | null;
 };
-interface ProductWithAdWords extends BaseProduct {
-  adWordsRemarketingCode: string | null;
-};
-interface ProductWithLomadee extends BaseProduct {
-  lomadeeCampaignCode: string | null;
-};
-export type Product =
-  | ProductWithAdWords
-  | ProductWithLomadee
-  | (ProductWithAdWords & ProductWithLomadee);
+export type Product = RemoveNullProperties<BaseProduct>;
 
 // CATEGORIES JSON
 interface CategoryFilter {
