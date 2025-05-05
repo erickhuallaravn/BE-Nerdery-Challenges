@@ -26,31 +26,35 @@ type ProductsPerCountry = Record<string, number>;
 
 async function countProductsByCountry(
   brands: Brand[],
-  products: Product[],
+  products: Product[]
 ): Promise<CountryProductCount[]> {
-  const productCountByCountry: ProductsPerCountry = {};
+  const productCountByBrand: Record<number, number> = {};
+  for (const product of products) {
+    const brandId = Number(product.brandId);
+    productCountByBrand[brandId] = (productCountByBrand[brandId] || 0) + 1;
+  }
 
+  const productCountByCountry: ProductsPerCountry = {};
   for (const brand of brands) {
+    const brandId = Number(brand.id);
+    const brandProductCount = productCountByBrand[brandId];
+    if (!brandProductCount) continue;
+
     const country = brand.headquarters?.split(", ")[1];
     if (!country) continue;
 
-    const brandProductsCount = products.filter(
-      (product) => Number(product.brandId) === Number(brand.id),
-    ).length;
-
-    if (brandProductsCount > 0) {
-      productCountByCountry[country] =
-        (productCountByCountry[country] || 0) + brandProductsCount;
-    }
+    productCountByCountry[country] =
+      (productCountByCountry[country] || 0) + brandProductCount;
   }
-
+  
   return Object.entries(productCountByCountry).map(
     ([country, productsAvailable]) => ({
       country,
       productsAvailable,
-    }),
+    })
   );
 }
+
 const productsPromise: Promise<Product[]> = readJsonFile<Product>(productsPath);
 const brandsPromise: Promise<Brand[]> = readJsonFile<Brand>(brandsPath);
 
