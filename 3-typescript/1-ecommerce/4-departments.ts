@@ -22,26 +22,35 @@ type DepartmentProductSummary = {
   productsAvailable: number;
   productsNames: string[];
 };
+
 async function summarizeProductsByDepartment(
   departments: Department[],
-  products: Product[],
+  products: Product[]
 ): Promise<DepartmentProductSummary[]> {
-  return departments
-    .map(({ id: departmentId, name: department }) => {
-      const relatedProducts = products.filter(
-        (p) => p.departmentId === departmentId,
-      );
+  const productsByDepartment = new Map<number, string[]>();
 
-      if (relatedProducts.length === 0) return null;
+  for (const { departmentId, name } of products) {
+    if (!productsByDepartment.has(departmentId)) {
+      productsByDepartment.set(departmentId, []);
+    }
+    productsByDepartment.get(departmentId)!.push(name);
+  }
 
-      return {
-        departmentId,
-        department,
-        productsAvailable: relatedProducts.length,
-        productsNames: relatedProducts.map((p) => p.name),
-      };
-    })
-    .filter((d): d is DepartmentProductSummary => d !== null);
+  const summaries: DepartmentProductSummary[] = [];
+
+  for (const { id: departmentId, name: department } of departments) {
+    const names = productsByDepartment.get(departmentId);
+    if (!names) continue;
+
+    summaries.push({
+      departmentId,
+      department,
+      productsAvailable: names.length,
+      productsNames: names,
+    });
+  }
+
+  return summaries;
 }
 
 const productsPromise: Promise<Product[]> = readJsonFile<Product>(productsPath);
@@ -50,7 +59,7 @@ const departmentsPromise: Promise<Department[]> =
 
 Promise.all([departmentsPromise, productsPromise])
   .then(([departments, products]) =>
-    summarizeProductsByDepartment(departments, products),
+    summarizeProductsByDepartment(departments, products)
   )
   .then((result) => {
     console.log(result);
