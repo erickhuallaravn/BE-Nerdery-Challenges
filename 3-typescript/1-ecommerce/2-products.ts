@@ -19,7 +19,7 @@
  *
  **/
 
-import { Brand, Product, ProductImage } from "./1-types";
+import { Brand, Product } from "./1-types";
 import { readJsonFile } from "./utils/read-json.util";
 import * as path from "path";
 
@@ -32,52 +32,59 @@ interface ProductAnalysisResult {
   mostExpensiveProduct: Product;
   cheapestProduct: Product;
   onSaleCount: number;
-  averageDiscountPercentage: string;
+  averageDiscountPercentage: number;
 }
 
 async function analyzeProductPrices(
-  products: Product[],
+  products: Product[]
 ): Promise<ProductAnalysisResult> {
-  if (products.length === 0) return {} as ProductAnalysisResult;
+  if (products.length === 0) {
+    throw new Error("No products to analyze");
+  }
 
-  const totalPrice = products.reduce((sum, product) => sum + product.price, 0);
-  const averagePrice = parseFloat((totalPrice / products.length).toFixed(2));
+  const initial = {
+    totalPrice: 0,
+    mostExpensiveProduct: products[0],
+    cheapestProduct: products[0],
+    onSaleCount: 0,
+    totalDiscountPercentage: 0,
+  };
 
-  const { mostExpensiveProduct, cheapestProduct } = products.reduce(
-    (acc, product) => {
-      if (product.price > acc.mostExpensiveProduct.price) {
-        acc.mostExpensiveProduct = product;
-      }
-      if (product.price < acc.cheapestProduct.price) {
-        acc.cheapestProduct = product;
-      }
-      return acc;
-    },
-    { // Initial value is the first product
-      mostExpensiveProduct: products[0],
-      cheapestProduct: products[0],
-    },
+  const result = products.reduce((acc, product) => {
+    acc.totalPrice += product.price;
+
+    if (product.price > acc.mostExpensiveProduct.price) {
+      acc.mostExpensiveProduct = product;
+    }
+
+    if (product.price < acc.cheapestProduct.price) {
+      acc.cheapestProduct = product;
+    }
+
+    if (product.onSale && product.salePrice !== undefined) {
+      acc.onSaleCount++;
+      const discount =
+        ((product.price - (product.salePrice ?? 0)) * 100) / product.price;
+      acc.totalDiscountPercentage += discount;
+    }
+
+    return acc;
+  }, initial);
+
+  const averagePrice = parseFloat(
+    (result.totalPrice / products.length).toFixed(2)
   );
 
-  const onSaleProducts = products.filter((product) => product.onSale);
-  const onSaleCount = onSaleProducts.length;
-
-  const averageDiscount = onSaleProducts.reduce((sum, product) => {
-    const discountPercentage = product.salePrice
-      ? ((product.price - product.salePrice) * 100) / product.price
-      : 0;
-    return sum + discountPercentage;
-  }, 0);
-  const averageDiscountPercentage = onSaleCount
-    ? `${(averageDiscount / onSaleCount).toFixed(2)}%`
-    : "0%";
+  const averageDiscountPercentage = result.onSaleCount
+    ? Number((result.totalDiscountPercentage / result.onSaleCount).toFixed(2))
+    : 0;
 
   return {
-    totalPrice,
+    totalPrice: result.totalPrice,
     averagePrice,
-    mostExpensiveProduct,
-    cheapestProduct,
-    onSaleCount,
+    mostExpensiveProduct: result.mostExpensiveProduct,
+    cheapestProduct: result.cheapestProduct,
+    onSaleCount: result.onSaleCount,
     averageDiscountPercentage,
   };
 }
@@ -106,37 +113,32 @@ productsPromise
   - The brandInfo field should include the rest of the brand metadata (name, logo, description, etc.).
  */
 
-type EnrichedProduct = Omit<Product, "isActive"> & {
-  brandInfo: Omit<Brand, "id" | "isActive">;
+type EnrichedProduct = Omit<Product, "brandId" | "isActive"> & {
+  brandInfo: Omit<Brand, "isActive">;
 };
 
 async function buildProductCatalog(
   products: Product[],
-  brands: Brand[],
+  brands: Brand[]
 ): Promise<EnrichedProduct[]> {
-  // It's mapped to being able to acceso to the .has method which is more efficient
-  const activeBrandMap = new Map(
-    brands
-      .filter((brand) => brand.isActive)
-      .map(({ id, isActive, ...rest }) => [
-        id,
-        rest as Omit<Brand, "id" | "isActive">,
-      ]),
-  );
+  const activeBrandMap = new Map<number | string, Omit<Brand, "isActive">>();
+  for (const { id, isActive, ...rest } of brands) {
+    if (isActive) {
+      activeBrandMap.set(id, {id, ...rest});
+    }
+  }
 
-  const validProducts = products.filter(
-    (product) => product.isActive && activeBrandMap.has(product.brandId),
-  );
-
-  const enrichedCatalog: EnrichedProduct[] = validProducts.map((product) => {
-    const { isActive, ...productData } = product;
-    const brandInfo = activeBrandMap.get(product.brandId)!;
-
-    return {
+  const enrichedCatalog: EnrichedProduct[] = [];
+  for (const { isActive, brandId, ...productData } of products) {
+    if (!isActive) continue;
+    const brandInfo = activeBrandMap.get(brandId);
+    if (!brandInfo) continue;
+    
+    enrichedCatalog.push({
       ...productData,
       brandInfo,
-    };
-  });
+    });
+  }
 
   return enrichedCatalog;
 }
@@ -161,15 +163,12 @@ Promise.all([productsPromise, brandsPromise])
  * - Use proper TypeScript typing for parameters and return values.
  */
 
-/*IN CASE WE WANT THE SINGLE IMAGE ITEM INSTEAD OF AN ARRAY*/
-// type SingleImageProduct = Omit<Product, "images"> & { images: ProductImage };
-
 async function getProductsWithSingleImage(
-  products: Product[],
+  products: Product[]
 ): Promise<Product[]> {
   return products
     .filter(
-      (product) => Array.isArray(product.images) && product.images.length > 0,
+      (product) => Array.isArray(product.images) && product.images.length > 0
     )
     .map((product) => ({
       ...product,
