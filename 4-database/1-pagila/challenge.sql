@@ -128,9 +128,7 @@ SELECT
 FROM
     public.customer c
     INNER JOIN public.rental r ON c.customer_id = r.customer_id
-    INNER JOIN public.inventory i ON r.inventory_id = i.inventory_id
 GROUP BY
-    c.customer_id,
     c.first_name,
     c.last_name
 ORDER BY
