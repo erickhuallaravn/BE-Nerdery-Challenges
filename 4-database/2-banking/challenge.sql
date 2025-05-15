@@ -46,9 +46,9 @@ CREATE OR REPLACE FUNCTION banking.transfer_funds(
 )
 RETURNS VOID AS $$
 DECLARE
-    from_balance NUMERIC;
-    from_status TEXT;
-    to_status TEXT;
+    sender_balance NUMERIC;
+    sender_status TEXT;
+    receiver_status TEXT;
     shared_reference UUID := gen_random_uuid();
 BEGIN
     -- Validate different accounts
@@ -62,7 +62,7 @@ BEGIN
     END IF;
 
     -- Check sender account exists and fetch balance (for later usage) and status
-    SELECT balance, status INTO from_balance, from_status
+    SELECT balance, status INTO sender_balance, sender_status
     FROM banking.accounts
     WHERE account_id = from_id;
     IF NOT FOUND THEN
@@ -70,7 +70,7 @@ BEGIN
     END IF;
 
     -- Check recipient account exists and fetch status
-    SELECT status INTO to_status
+    SELECT status INTO receiver_status
     FROM banking.accounts
     WHERE account_id = to_id;
     IF NOT FOUND THEN
@@ -78,15 +78,15 @@ BEGIN
     END IF;
 
     -- Check both accounts are active
-    IF from_status = 'frozen' THEN
+    IF sender_status = 'frozen' THEN
         RAISE EXCEPTION 'Sender account % is frozen', from_id;
     END IF;
-    IF to_status = 'frozen' THEN
+    IF receiver_status = 'frozen' THEN
         RAISE EXCEPTION 'Recipient account % is frozen', to_id;
     END IF;
 
     -- Check sufficient funds
-    IF from_balance < amount THEN
+    IF sender_balance < amount THEN
         RAISE EXCEPTION 'Insufficient funds in account %', from_id;
     END IF;
 
