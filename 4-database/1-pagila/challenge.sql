@@ -68,27 +68,15 @@ ORDER BY
     - title should display the name of each film that has never been rented
     - inventory_id should show the inventory ID of the specific copy
 */
-WITH films_with_zero_rents AS (
-    SELECT
-        f.title,
-        i.inventory_id,
-        COUNT(r.rental_id) as count
-    FROM
-        public.film f
-        LEFT JOIN public.inventory i ON f.film_id = i.film_id
-        LEFT JOIN public.rental r ON r.inventory_id = i.inventory_id
-    GROUP BY
-        f.film_id,
-        f.title,
-        i.inventory_id
-    HAVING
-        COUNT(r.rental_id) = 0
-)
 SELECT
-    title,
-    inventory_id
+    f.title,
+    i.inventory_id
 FROM
-    films_with_zero_rents
+    public.film f
+    LEFT JOIN public.inventory i ON f.film_id = i.film_id
+    LEFT JOIN public.rental r ON i.inventory_id = r.inventory_id
+WHERE
+    r.inventory_id IS NULL
 ORDER BY
     title;
 
