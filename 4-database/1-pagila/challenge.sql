@@ -35,13 +35,10 @@ FROM
     public.customer c
     INNER JOIN public.payment p ON c.customer_id = p.customer_id
 GROUP BY
-    c.customer_id,
     c.first_name,
     c.last_name
 ORDER BY
-    total_spent DESC,
-    first_name,
-    last_name
+    total_spent DESC
 LIMIT 5;
 
 
@@ -57,13 +54,9 @@ SELECT
     f.title
 FROM
     public.film f
-    INNER JOIN public.inventory i ON f.film_id = i.film_id
     INNER JOIN public.rental r ON i.inventory_id = r.inventory_id
 WHERE
     r.rental_date BETWEEN (CURRENT_DATE - INTERVAL '10 YEAR') AND CURRENT_DATE
-GROUP BY
-    f.film_id,
-    f.title
 ORDER BY
     title;
 
