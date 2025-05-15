@@ -142,14 +142,12 @@ ORDER BY
     - Only include customers who are missing at least one genre in their rental history
 */
 SELECT
-    CONCAT(c.first_name, ' ', c.last_name) as customer,
-    COUNT(DISTINCT fc.category_id) as total_categories_rented
+    CONCAT(c.first_name, ' ', c.last_name) as customer
 FROM
     public.customer c
     INNER JOIN public.rental r ON c.customer_id = r.customer_id
     INNER JOIN public.inventory i ON r.inventory_id = i.inventory_id
-    INNER JOIN public.film f ON i.film_id = f.film_id
-    INNER JOIN public.film_category fc ON f.film_id = fc.film_id
+    INNER JOIN public.film_category fc ON i.film_id = fc.film_id
 GROUP BY
     c.customer_id,
     c.first_name,
