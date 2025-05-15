@@ -76,6 +76,8 @@ BEGIN
     IF NOT FOUND THEN
         RAISE EXCEPTION 'Recipient account % does not exist', to_id;
     END IF;
+    
+    PERFORM pg_advisory_xact_lock(from_id, to_id);
 
     -- Check both accounts are active
     IF sender_status = 'frozen' THEN
@@ -89,8 +91,6 @@ BEGIN
     IF sender_balance < amount THEN
         RAISE EXCEPTION 'Insufficient funds in account %', from_id;
     END IF;
-
-    PERFORM pg_advisory_xact_lock(from_id, to_id);
 
     UPDATE banking.accounts
     SET balance = balance - amount
